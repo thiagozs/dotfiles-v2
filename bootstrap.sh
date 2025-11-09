@@ -14,16 +14,16 @@ if ! command -v gum &>/dev/null; then
 fi
 
 clear
-gum style --foreground 212 "🚀 Bootstrap de ambiente - ThiagoZS"
-gum style --foreground 99 "------------------------------------"
+gum style --foreground 212 -- "🚀 Bootstrap de ambiente - ThiagoZS"
+gum style --foreground 99 -- "------------------------------------"
 
-CHOICES=$(gum choose --no-limit \
+mapfile -t CHOICES < <(gum choose --no-limit \
   "Instalar Utils do Sistema" \
   "Instalar Utils do Shell" \
   "Instalar Dev Tools" \
   "Instalar tudo")
 
-for choice in $CHOICES; do
+for choice in "${CHOICES[@]}"; do
   case "$choice" in
     "Instalar Utils do Sistema")
       bash ./install_system_utils.sh
@@ -43,4 +43,3 @@ for choice in $CHOICES; do
 done
 
 gum style --foreground 212 "\n✅ Bootstrap concluído! Reinicie o terminal."
-

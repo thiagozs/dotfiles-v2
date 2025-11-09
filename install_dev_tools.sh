@@ -3,7 +3,7 @@ set -euo pipefail
 
 gum style --bold --foreground 99 "🧑‍💻 Dev Tools Setup"
 
-DEV_TOOLS=$(gum choose --no-limit \
+mapfile -t DEV_TOOLS < <(gum choose --no-limit \
   "git" \
   "make" \
   "golang (via goenv)" \
@@ -18,7 +18,7 @@ DEV_TOOLS=$(gum choose --no-limit \
   "docker buildx" \
   "redis-cli")
 
-for tool in $DEV_TOOLS; do
+for tool in "${DEV_TOOLS[@]}"; do
   case $tool in
     "git")
       sudo apt install -y git

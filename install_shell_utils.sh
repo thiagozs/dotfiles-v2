@@ -3,7 +3,7 @@ set -euo pipefail
 
 gum style --bold --foreground 99 "🧠 Utils do Shell"
 
-SHELL_UTILS=$(gum choose --no-limit \
+mapfile -t SHELL_UTILS < <(gum choose --no-limit \
   "zsh" \
   "oh-my-zsh" \
   "spaceship theme" \
@@ -23,17 +23,27 @@ SHELL_UTILS=$(gum choose --no-limit \
   "tldr" \
   "zoxide")
 
-for util in $SHELL_UTILS; do
+for util in "${SHELL_UTILS[@]}"; do
   case $util in
     "zsh")
       sudo apt install -y zsh
-      chsh -s "$(which zsh)"
+      sudo chsh -s "$(which zsh)" "$USER"
       ;;
     "oh-my-zsh")
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+      if [ -d "$HOME/.oh-my-zsh" ]; then
+        echo "[info] Oh My Zsh já está instalado, pulando..."
+      else
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+      fi
       ;;
     "spaceship theme")
-      git clone https://github.com/spaceship-prompt/spaceship-prompt.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/spaceship-prompt" --depth=1
+      THEME_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/spaceship-prompt"
+      if [ -d "$THEME_DIR/.git" ]; then
+        git -C "$THEME_DIR" pull --ff-only
+      else
+        rm -rf "$THEME_DIR"
+        git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$THEME_DIR" --depth=1
+      fi
       ln -sf "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/spaceship-prompt/spaceship.zsh-theme" "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/spaceship.zsh-theme"
       ;;
     "plugins zsh")
@@ -47,7 +57,9 @@ for util in $SHELL_UTILS; do
       sudo apt install -y duf
       ;;
     "exa")
-      sudo apt install -y exa
+      if ! sudo apt install -y exa; then
+        sudo apt install -y eza
+      fi
       ;;
     "bat")
       sudo apt install -y bat
@@ -94,4 +106,3 @@ for util in $SHELL_UTILS; do
 done
 
 gum style --foreground 35 "✅ Utils do shell instalados!"
-

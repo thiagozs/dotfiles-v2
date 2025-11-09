@@ -3,7 +3,7 @@ set -euo pipefail
 
 gum style --bold --foreground 99 "💻 Utils do Sistema"
 
-SYS_UTILS=$(gum choose --no-limit \
+mapfile -t SYS_UTILS < <(gum choose --no-limit \
   "docker cli" \
   "docker compose" \
   "vscode" \
@@ -11,7 +11,7 @@ SYS_UTILS=$(gum choose --no-limit \
   "discord" \
   "brew")
 
-for util in $SYS_UTILS; do
+for util in "${SYS_UTILS[@]}"; do
   case $util in
     "docker cli")
       gum spin --spinner line --title "Instalando Docker CLI..." -- bash -c '
@@ -61,4 +61,3 @@ for util in $SYS_UTILS; do
 done
 
 gum style --foreground 35 "✅ Utils do sistema instalados!"
-
