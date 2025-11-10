@@ -1,32 +1,105 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ferramentas de desenvolvimento (compiladores, CLIs, runtimes)
 gum style --bold --foreground 99 "🧑‍💻 Dev Tools Setup"
 
-mapfile -t DEV_TOOLS < <(gum choose --no-limit \
-  "git" \
-  "make" \
-  "golang (via goenv)" \
-  "nodejs (via nodenv)" \
-  "python3 + pip" \
-  "postgresql + client" \
-  "sqlite3" \
-  "jq" \
-  "httpie" \
-  "gh (GitHub CLI)" \
-  "build essentials" \
-  "docker buildx" \
-  "redis-cli")
+wait_for_apt_lock() {
+  local lock_files=(
+    /var/lib/dpkg/lock-frontend
+    /var/lib/dpkg/lock
+    /var/cache/apt/archives/lock
+  )
+  local printed=false
+  while true; do
+    local locked=false
+    for lock in "${lock_files[@]}"; do
+      if sudo fuser "$lock" >/dev/null 2>&1; then
+        locked=true
+        break
+      fi
+    done
+    if ! $locked; then
+      if $printed; then
+        echo "🔓 Lock do apt liberado."
+      fi
+      break
+    fi
+    if ! $printed; then
+      echo "⏳ Aguardando o apt liberar o lock..."
+      printed=true
+    fi
+    sleep 3
+  done
+}
+
+apt_update() {
+  wait_for_apt_lock
+  sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
+}
+
+apt_install() {
+  wait_for_apt_lock
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"
+}
+export -f wait_for_apt_lock apt_update apt_install
+if [[ ${DOTFILES_INSTALL_ALL:-0} -eq 1 ]]; then
+  DEV_TOOLS=(
+    "git"
+    "make"
+    "golang (via goenv)"
+    "nodejs (via nodenv)"
+    "python3 + pip"
+    "postgresql + client"
+    "sqlite3"
+    "jq"
+    "httpie"
+    "gh (GitHub CLI)"
+    "build essentials"
+    "docker buildx"
+    "redis-cli"
+  )
+else
+  # mapfile impede que nomes com espaços se quebrem nas seleções do gum
+  gum style --foreground 244 "Use ↑ ↓ para navegar, Espaço para selecionar/deselecionar e Enter para confirmar."
+  mapfile -t DEV_TOOLS < <(gum choose --no-limit \
+    --selected "git" \
+    --selected "make" \
+    --selected "golang (via goenv)" \
+    --selected "nodejs (via nodenv)" \
+    --selected "python3 + pip" \
+    --selected "postgresql + client" \
+    --selected "sqlite3" \
+    --selected "jq" \
+    --selected "httpie" \
+    --selected "gh (GitHub CLI)" \
+    --selected "build essentials" \
+    --selected "docker buildx" \
+    --selected "redis-cli" \
+    "git" \
+    "make" \
+    "golang (via goenv)" \
+    "nodejs (via nodenv)" \
+    "python3 + pip" \
+    "postgresql + client" \
+    "sqlite3" \
+    "jq" \
+    "httpie" \
+    "gh (GitHub CLI)" \
+    "build essentials" \
+    "docker buildx" \
+    "redis-cli")
+fi
 
 for tool in "${DEV_TOOLS[@]}"; do
   case $tool in
     "git")
-      sudo apt install -y git
+      apt_install git
       git config --global init.defaultBranch main
       git config --global pull.rebase false
       ;;
     "make")
-      sudo apt install -y make
+      apt_install make
       ;;
     "golang (via goenv)")
       gum spin --spinner line --title "Instalando e configurando goenv..." -- bash -c '
@@ -91,40 +164,40 @@ for tool in "${DEV_TOOLS[@]}"; do
       '
       ;;
     "python3 + pip")
-      sudo apt install -y python3 python3-pip python3-venv
+      apt_install python3 python3-pip python3-venv
       ;;
     "postgresql + client")
       gum spin --spinner line --title "Instalando PostgreSQL e cliente..." -- bash -c '
-        sudo apt install -y postgresql postgresql-client libpq-dev
+        apt_install postgresql postgresql-client libpq-dev
         sudo systemctl enable postgresql
       '
       ;;
     "sqlite3")
-      sudo apt install -y sqlite3
+      apt_install sqlite3
       ;;
     "jq")
-      sudo apt install -y jq
+      apt_install jq
       ;;
     "httpie")
-      sudo apt install -y httpie
+      apt_install httpie
       ;;
     "gh (GitHub CLI)")
       gum spin --spinner line --title "Instalando GitHub CLI..." -- bash -c '
-        type -p curl >/dev/null || sudo apt install curl -y
+        type -p curl >/dev/null || apt_install curl
         curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
         sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        sudo apt update && sudo apt install gh -y
+        apt_update && apt_install gh
       '
       ;;
     "build essentials")
-      sudo apt install -y build-essential pkg-config libssl-dev
+      apt_install build-essential pkg-config libssl-dev
       ;;
     "docker buildx")
-      sudo apt install -y docker-buildx-plugin
+      apt_install docker-buildx-plugin
       ;;
     "redis-cli")
-      sudo apt install -y redis-tools
+      apt_install redis-tools
       ;;
   esac
 done
