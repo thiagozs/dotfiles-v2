@@ -2,6 +2,8 @@
 
 Automação para transformar uma máquina Ubuntu/Debian zerada em um ambiente completo de desenvolvimento. Os scripts usam [`gum`](https://github.com/charmbracelet/gum) para menus interativos e permitem instalar tanto utilidades de sistema quanto ferramentas de shell e stacks de desenvolvimento.
 
+![Menu](assets/menu_principal.png)
+
 ## Conteúdo
 
 - `bootstrap.sh`: orquestra a instalação e permite selecionar quais grupos rodar.
